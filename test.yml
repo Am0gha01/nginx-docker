@@ -1,0 +1,26 @@
+---
+  - name: Setting up simple docker to run nginx
+    hosts: localhost 
+    become: yes
+    tasks:
+      
+      - name: Installing docker on the local machine
+        ansible.builtin.dnf:
+          name: "{{ item }}"
+          state: latest
+        loop:
+          - docker
+
+      - name: Starting the docker service
+        ansible.builtin.service:
+          name: docker
+          state: started
+          enabled: yes
+
+      - name: Pull nginx image
+        containers.podman.podman:
+          name: nginx container
+          image: nginx-stable-alpine3.2
+          state: started
+          expose: 80
+
