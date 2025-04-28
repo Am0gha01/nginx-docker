@@ -1,0 +1,54 @@
+---
+- name: Install Docker, Start Docker Service, Pull Nginx Image, Run Nginx Container
+  hosts: all
+  become: true
+
+  tasks:
+    - name: Install required packages
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
+        state: present
+      when: ansible_facts['os_family'] == "Debian"
+
+    - name: Add Docker’s official GPG key
+      apt_key:
+        url: https://download.docker.com/linux/$(lsb_release -is | tr '[:upper:]' '[:lower:]')/gpg
+        state: present
+      when: ansible_facts['os_family'] == "Debian"
+
+    - name: Set up the Docker stable repository
+      apt_repository:
+        repo: "deb [arch=amd64] https://download.docker.com/linux/{{ ansible_facts['distribution'] | lower }} {{ ansible_facts['distribution_release'] }} stable"
+        state: present
+      when: ansible_facts['os_family'] == "Debian"
+
+    - name: Install Docker Engine
+      apt:
+        name: docker-ce
+        state: latest
+        update_cache: true
+      when: ansible_facts['os_family'] == "Debian"
+
+    - name: Ensure Docker service is running
+      service:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Pull the latest nginx image
+      community.docker.docker_image:
+        name: nginx
+        source: pull
+
+    - name: Run nginx container
+      community.docker.docker_container:
+        name: nginx-container
+        image: nginx
+        state: started
+        ports:
+          - "80:80"
